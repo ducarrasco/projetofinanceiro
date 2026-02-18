@@ -1,0 +1,70 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/client"
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  description   String
+  amount        Decimal
+  type          TransactionType
+  category      String
+  date          DateTime        @db.Timestamp(3)
+  isRecurring   Boolean         @default(false)
+  installments  Json?
+  groupId       String?
+  relatedCardId String?
+  card          CreditCard?     @relation(fields: [relatedCardId], references: [id])
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@index([date])
+  @@index([groupId])
+}
+
+model CreditCard {
+  id         String        @id @default(cuid())
+  name       String
+  limit      Decimal
+  closingDay Int
+  dueDay     Int
+  expenses   CardExpense[]
+  payments   Transaction[]
+  createdAt  DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime      @updatedAt @db.Timestamptz(3)
+}
+
+model CardExpense {
+  id           String     @id @default(cuid())
+  description  String
+  totalAmount  Decimal
+  purchaseDate DateTime   @db.Timestamp(3)
+  installments Json?
+  isRecurring  Boolean    @default(false)
+  category     String
+  cardId       String
+  card         CreditCard @relation(fields: [cardId], references: [id])
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@index([cardId])
+  @@index([purchaseDate])
+}
+
+model CustomIcon {
+  id             String   @id @default(cuid())
+  keyword        String   @unique
+  brandTerm      String?
+  customImageUrl String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
